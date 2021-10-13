@@ -63,9 +63,10 @@ func main() {
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
 		panic(token.Error())
 	}
+	journal.Send(fmt.Sprintf("Connected to MQTT at %s", broker_url), journal.PriInfo, logvars)
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/pub", pubHandler(client))
+	mux.HandleFunc("/pub", httpHandler(client))
 
 	listen_address, _ := conf.String("http::listen_address")
 	journal.Send(fmt.Sprintf("http listener on %s", listen_address), journal.PriInfo, logvars)
@@ -73,17 +74,15 @@ func main() {
 	log.Fatal(err)
 }
 
-// func httpHandler(w http.ResponseWriter, r *http.Request) {
-func pubHandler(client mqtt.Client) http.HandlerFunc {
+func httpHandler(client mqtt.Client) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// w.Write([]byte("Hi, from Service: " + name))
 
-		fmt.Printf("%s %s %s\n", r.Method, r.URL, r.Proto)
-		for k, v := range r.Header {
-			fmt.Printf("Header[%q] = %q\n", k, v)
-		}
-		fmt.Printf("Host = %q\n", r.Host)
-		fmt.Printf("RemoteAddr = %q\n", r.RemoteAddr)
+		// fmt.Printf("%s %s %s\n", r.Method, r.URL, r.Proto)
+		// for k, v := range r.Header {
+		// 	fmt.Printf("Header[%q] = %q\n", k, v)
+		// }
+		// fmt.Printf("Host = %q\n", r.Host)
+		// fmt.Printf("RemoteAddr = %q\n", r.RemoteAddr)
 
 		var ot_data OT_struct
 		err := json.NewDecoder(r.Body).Decode(&ot_data)
@@ -91,9 +90,9 @@ func pubHandler(client mqtt.Client) http.HandlerFunc {
 			fmt.Printf("JSON decode error: %s\n", err)
 			return
 		}
+		fmt.Printf("Topic: %s\n", ot_data.Topic)
 		fmt.Printf("Lat: %f\n", ot_data.Lat)
 		fmt.Printf("Lon: %f\n", ot_data.Lon)
-		fmt.Printf("Topic: %s\n", ot_data.Topic)
 
 		var jsonData []byte
 		jsonData, err = json.Marshal(ot_data)
@@ -105,7 +104,7 @@ func pubHandler(client mqtt.Client) http.HandlerFunc {
 		token := client.Publish(ot_data.Topic, 0, false, jsonData)
 		token.Wait()
 
-		fmt.Fprintf(w, "{}\n")
+		fmt.Fprintf(w, "[]\n")
 
 	}
 }
