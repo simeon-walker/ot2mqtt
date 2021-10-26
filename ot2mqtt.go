@@ -29,7 +29,7 @@ type OT_struct struct {
 }
 
 var connectHandler mqtt.OnConnectHandler = func(client mqtt.Client) {
-	log.Println("MQTT Connected")
+	log.Println("MQTT Connected.")
 }
 
 var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err error) {
@@ -49,9 +49,12 @@ func main() {
 	}
 	journal.Send("ot2mqtt starting...", journal.PriInfo, logvars)
 
-	broker_url, _ := conf.String("mqtt::url")
+	broker_url, cfgerr := conf.String("mqtt::url")
 	broker_username, _ := conf.String("mqtt::username")
 	broker_password, _ := conf.String("mqtt::password")
+	if cfgerr != nil {
+		log.Fatal(cfgerr)
+	}
 
 	opts := mqtt.NewClientOptions().AddBroker(broker_url)
 	// opts.SetClientID("ot-pub")
@@ -76,13 +79,6 @@ func main() {
 
 func httpHandler(client mqtt.Client) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
-		// fmt.Printf("%s %s %s\n", r.Method, r.URL, r.Proto)
-		// for k, v := range r.Header {
-		// 	fmt.Printf("Header[%q] = %q\n", k, v)
-		// }
-		// fmt.Printf("Host = %q\n", r.Host)
-		// fmt.Printf("RemoteAddr = %q\n", r.RemoteAddr)
 
 		var ot_data OT_struct
 		err := json.NewDecoder(r.Body).Decode(&ot_data)
