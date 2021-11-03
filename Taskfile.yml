@@ -1,0 +1,27 @@
+version: '3'
+
+dotenv: ['.env',]
+
+vars:
+  APP: ot2mqtt
+
+tasks:
+
+  clean:
+    cmds:
+      - go clean -v
+
+  build:
+    cmds:
+      - go build 
+    sources:
+      - ./*.go
+    generates:
+      - ./{{.APP}}
+
+  deploy:
+    deps: [build]
+    vars:
+      DEST_DIR: /usr/local/bin/
+    cmds:
+      - scp -p {{.APP}} {{.DEPLOY_HOST}}:{{.DEPLOY_DIR}}
