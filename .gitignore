@@ -1,5 +1,4 @@
-app.conf
-test-req.sh
-ot2mqtt
-.task
 .env
+.task
+.vscode
+ot2mqtt

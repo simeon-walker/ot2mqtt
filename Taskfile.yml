@@ -1,19 +1,18 @@
-version: '3'
+version: "3"
 
-dotenv: ['.env',]
+dotenv: [".env"]
 
 vars:
   APP: ot2mqtt
 
 tasks:
-
   clean:
     cmds:
       - go clean -v
 
   build:
     cmds:
-      - go build 
+      - go build
     sources:
       - ./*.go
     generates:
@@ -25,3 +24,26 @@ tasks:
       DEST_DIR: /usr/local/bin/
     cmds:
       - scp -p {{.APP}} {{.DEPLOY_HOST}}:{{.DEPLOY_DIR}}
+
+  podman_build:
+    desc: Build container image
+    deps:
+      - build
+    cmds:
+      - echo building $TAG:$VERSION
+      - podman build --file Dockerfile -t $TAG:$VERSION .
+    status:
+      # try a pull in case it's built but not local
+      - podman pull $TAG:$VERSION
+      # check to see if already built
+      - podman inspect --type=image $TAG:$VERSION
+
+  podman_push:
+    desc: Push container image
+    deps:
+      - podman_build
+    cmds:
+      - podman push $TAG:$VERSION
+    status:
+      # check to see if already pushed
+      - podman pull $TAG:$VERSION
